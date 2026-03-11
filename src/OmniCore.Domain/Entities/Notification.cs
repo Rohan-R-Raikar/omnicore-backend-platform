@@ -14,5 +14,7 @@ namespace OmniCore.Domain.Entities
         public string Message { get; set; } = string.Empty;
 
         public bool IsRead { get; set; } = false;
+
+        public User? User { get; set; }
     }
 }
