@@ -1,0 +1,11 @@
+{
+  "version": 2,
+  "dgSpecHash": "Q6onf+Hm+Vg=",
+  "success": true,
+  "projectFilePath": "D:\\Rohan\\OmniCore\\src\\OmniCore.API\\OmniCore.API.csproj",
+  "expectedPackageFiles": [
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.aspnetcore.openapi\\9.0.6\\microsoft.aspnetcore.openapi.9.0.6.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.openapi\\1.6.17\\microsoft.openapi.1.6.17.nupkg.sha512"
+  ],
+  "logs": []
+}
