@@ -3,6 +3,12 @@
   <ItemGroup>
     <ProjectReference Include="..\OmniCore.Application\OmniCore.Application.csproj" />
     <ProjectReference Include="..\OmniCore.Domain\OmniCore.Domain.csproj" />
+    <ProjectReference Include="..\OmniCore.Persistence\OmniCore.Persistence.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BCrypt.Net-Next" Version="4.1.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.16.0" />
   </ItemGroup>
 
   <PropertyGroup>
