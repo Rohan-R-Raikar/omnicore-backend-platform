@@ -1,11 +1,30 @@
 {
   "version": 3,
   "targets": {
-    "net9.0": {}
+    "net9.0": {
+      "OmniCore.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "compile": {
+          "bin/placeholder/OmniCore.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/OmniCore.Domain.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "OmniCore.Domain/1.0.0": {
+      "type": "project",
+      "path": "../OmniCore.Domain/OmniCore.Domain.csproj",
+      "msbuildProject": "../OmniCore.Domain/OmniCore.Domain.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net9.0": []
+    "net9.0": [
+      "OmniCore.Domain >= 1.0.0"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\XD24100BT\\.nuget\\packages\\": {},
@@ -39,7 +58,11 @@
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "D:\\Rohan\\OmniCore\\src\\OmniCore.Domain\\OmniCore.Domain.csproj": {
+              "projectPath": "D:\\Rohan\\OmniCore\\src\\OmniCore.Domain\\OmniCore.Domain.csproj"
+            }
+          }
         }
       },
       "warningProperties": {

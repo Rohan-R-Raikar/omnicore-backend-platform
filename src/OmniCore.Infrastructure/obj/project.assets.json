@@ -1,11 +1,49 @@
 {
   "version": 3,
   "targets": {
-    "net9.0": {}
+    "net9.0": {
+      "OmniCore.Application/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "dependencies": {
+          "OmniCore.Domain": "1.0.0"
+        },
+        "compile": {
+          "bin/placeholder/OmniCore.Application.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/OmniCore.Application.dll": {}
+        }
+      },
+      "OmniCore.Domain/1.0.0": {
+        "type": "project",
+        "framework": ".NETCoreApp,Version=v9.0",
+        "compile": {
+          "bin/placeholder/OmniCore.Domain.dll": {}
+        },
+        "runtime": {
+          "bin/placeholder/OmniCore.Domain.dll": {}
+        }
+      }
+    }
   },
-  "libraries": {},
+  "libraries": {
+    "OmniCore.Application/1.0.0": {
+      "type": "project",
+      "path": "../OmniCore.Application/OmniCore.Application.csproj",
+      "msbuildProject": "../OmniCore.Application/OmniCore.Application.csproj"
+    },
+    "OmniCore.Domain/1.0.0": {
+      "type": "project",
+      "path": "../OmniCore.Domain/OmniCore.Domain.csproj",
+      "msbuildProject": "../OmniCore.Domain/OmniCore.Domain.csproj"
+    }
+  },
   "projectFileDependencyGroups": {
-    "net9.0": []
+    "net9.0": [
+      "OmniCore.Application >= 1.0.0",
+      "OmniCore.Domain >= 1.0.0"
+    ]
   },
   "packageFolders": {
     "C:\\Users\\XD24100BT\\.nuget\\packages\\": {},
@@ -39,7 +77,14 @@
       "frameworks": {
         "net9.0": {
           "targetAlias": "net9.0",
-          "projectReferences": {}
+          "projectReferences": {
+            "D:\\Rohan\\OmniCore\\src\\OmniCore.Application\\OmniCore.Application.csproj": {
+              "projectPath": "D:\\Rohan\\OmniCore\\src\\OmniCore.Application\\OmniCore.Application.csproj"
+            },
+            "D:\\Rohan\\OmniCore\\src\\OmniCore.Domain\\OmniCore.Domain.csproj": {
+              "projectPath": "D:\\Rohan\\OmniCore\\src\\OmniCore.Domain\\OmniCore.Domain.csproj"
+            }
+          }
         }
       },
       "warningProperties": {
