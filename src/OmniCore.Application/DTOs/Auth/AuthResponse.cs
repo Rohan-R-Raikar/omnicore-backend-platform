@@ -11,5 +11,7 @@ namespace OmniCore.Application.DTOs.Auth
         public string AccessToken { get; set; } = string.Empty;
 
         public string RefreshToken { get; set; } = string.Empty;
+
+        public DateTime ExpiresAt { get; set; }
     }
 }

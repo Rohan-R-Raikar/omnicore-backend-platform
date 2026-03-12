@@ -16,5 +16,7 @@ namespace OmniCore.Domain.Entities
         public bool IsRead { get; set; } = false;
 
         public User? User { get; set; }
+
+        public string Type { get; set; } = string.Empty;
     }
 }

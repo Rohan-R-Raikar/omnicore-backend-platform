@@ -1,5 +1,4 @@
 ﻿using OmniCore.Domain.Common;
-using OmniCore.Domain.Enums;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -15,8 +14,14 @@ namespace OmniCore.Domain.Entities
         public string PasswordHash { get; set; } = string.Empty;
 
         public string FullName { get; set; } = string.Empty;
-        public Role Role { get; set; } = Role.User;
-
+        
+        public Guid RoleId { get; set; }
+        
+        public Role Role { get; set; } = null!;
+        
         public bool IsActive { get; set; } = true;
+        public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
+
+        public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
     }
 }

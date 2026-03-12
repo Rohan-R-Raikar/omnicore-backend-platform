@@ -6,9 +6,9 @@ namespace OmniCore.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class UsersController : ControllerBase
     {
-        [Authorize]
         [HttpGet("me")]
         public IActionResult GetCurrentUser()
         {
@@ -17,20 +17,46 @@ namespace OmniCore.API.Controllers
             var fullName = User.FindFirstValue("fullName");
             var role = User.FindFirstValue(ClaimTypes.Role);
 
+            var permissions = User.Claims
+                .Where(c => c.Type == "permission")
+                .Select(c => c.Value)
+                .ToList();
+
             return Ok(new
             {
                 userId,
                 email,
                 fullName,
-                role
+                role,
+                permissions
             });
         }
 
         [Authorize(Roles = "Admin")]
-        [HttpGet("all-users")]
-        public IActionResult GetAllUsers()
+        [HttpGet("admin-only")]
+        public IActionResult AdminOnly()
         {
-            return Ok("Only admins can see this");
+            return Ok("Only Admin role can access this endpoint");
+        }
+
+        [HttpGet("check-permission/{permission}")]
+        public IActionResult CheckPermission(string permission)
+        {
+            var permissions = User.Claims
+                .Where(c => c.Type == "permission")
+                .Select(c => c.Value)
+                .ToList();
+
+            if (!permissions.Contains(permission))
+            {
+                return Forbid();
+            }
+
+            return Ok(new
+            {
+                message = "Permission granted",
+                permissionChecked = permission
+            });
         }
     }
 }

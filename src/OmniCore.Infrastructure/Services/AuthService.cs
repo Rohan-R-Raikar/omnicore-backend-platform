@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using OmniCore.Application.DTOs.Auth;
 using OmniCore.Application.Interfaces;
 using OmniCore.Domain.Entities;
@@ -16,11 +17,13 @@ namespace OmniCore.Infrastructure.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly IJwtTokenGenerator _jwt;
+        private readonly IConfiguration _configuration;
 
-        public AuthService(ApplicationDbContext context, IJwtTokenGenerator jwt)
+        public AuthService(ApplicationDbContext context, IJwtTokenGenerator jwt, IConfiguration configuration)
         {
             _context = context;
             _jwt = jwt;
+            _configuration = configuration;
         }
 
         public async Task<AuthResponse> RegisterAsync(RegisterRequest request)
@@ -35,26 +38,34 @@ namespace OmniCore.Infrastructure.Services
             {
                 Email = request.Email,
                 FullName = request.FullName,
-                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
+                PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
+                RoleId = Guid.Parse("33333333-3333-3333-3333-333333333333")
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            var accessToken = _jwt.GenerateToken(user);
+            var role = await _context.Roles.FirstAsync(r => r.Id == user.RoleId);
+            var roles = new List<string> { role.Name };
+            var permissions = role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
+            var accessToken = _jwt.GenerateToken(user, roles, permissions);
             var refreshToken = await CreateRefreshToken(user.Id);
 
             return new AuthResponse
             {
                 AccessToken = accessToken,
-                RefreshToken = refreshToken
+                RefreshToken = refreshToken,
+                ExpiresAt = GetAccessTokenExpiry()
             };
         }
 
-        public async Task<AuthResponse> LoginAsync(LoginRequest request)
+        public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct)
         {
             var user = await _context.Users
-                .FirstOrDefaultAsync(x => x.Email == request.Email);
+                                    .Include(u => u.Role)   
+                                    .ThenInclude(r => r.RolePermissions)
+                                    .ThenInclude(rp => rp.Permission)
+                                    .FirstOrDefaultAsync(x => x.Email == request.Email, ct);
 
             if (user == null)
                 throw new Exception("Invalid credentials");
@@ -71,15 +82,18 @@ namespace OmniCore.Infrastructure.Services
                 .Where(x => x.UserId == user.Id);
 
             _context.RefreshTokens.RemoveRange(existingTokens);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(ct);
 
-            var accessToken = _jwt.GenerateToken(user);
+            var roles = new List<string> { user.Role.Name };
+            var permissions = user.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
+            var accessToken = _jwt.GenerateToken(user, roles, permissions);
             var refreshToken = await CreateRefreshToken(user.Id);
 
             return new AuthResponse
             {
                 AccessToken = accessToken,
-                RefreshToken = refreshToken
+                RefreshToken = refreshToken,
+                ExpiresAt = GetAccessTokenExpiry()
             };
         }
 
@@ -112,7 +126,12 @@ namespace OmniCore.Infrastructure.Services
 
             token.IsRevoked = true;
 
-            var accessToken = _jwt.GenerateToken(token.User);
+            var roles = new List<string> { token.User.Role.Name};
+            var permissions = token.User.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
+            var accessToken = _jwt.GenerateToken(token.User, roles, permissions);
+
+            token.IsRevoked = true;
+            token.RevokedAt = DateTime.UtcNow;
 
             var newRefreshToken = Convert.ToBase64String(
                 RandomNumberGenerator.GetBytes(64)
@@ -133,7 +152,8 @@ namespace OmniCore.Infrastructure.Services
             return new AuthResponse
             {
                 AccessToken = accessToken,
-                RefreshToken = newRefreshToken
+                RefreshToken = newRefreshToken,
+                ExpiresAt = GetAccessTokenExpiry()
             };
         }
         public async Task LogoutAsync(string refreshToken)
@@ -145,6 +165,7 @@ namespace OmniCore.Infrastructure.Services
                 throw new Exception("Invalid refresh token");
 
             token.IsRevoked = true;
+            token.RevokedAt = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
         }
@@ -160,13 +181,22 @@ namespace OmniCore.Infrastructure.Services
                 UserId = userId,
                 Token = token,
                 ExpiresAt = DateTime.UtcNow.AddDays(7),
-                IsRevoked = false
+                IsRevoked = false,
+                RevokedAt = null
             };
 
             _context.RefreshTokens.Add(refreshToken);
             await _context.SaveChangesAsync();
 
             return token;
+        }
+        private DateTime GetAccessTokenExpiry()
+        {
+            var minutes = double.Parse(
+                _configuration["Jwt:ExpiryMinutes"]!
+            );
+
+            return DateTime.UtcNow.AddMinutes(minutes);
         }
     }
 }
