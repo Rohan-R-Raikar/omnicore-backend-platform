@@ -9,7 +9,9 @@ namespace OmniCore.Application.Interfaces
 {
     public interface IAuthService
     {
-        Task<string> RegisterAsync(RegisterRequest request);
-        Task<string> LoginAsync(LoginRequest request);
+        Task<AuthResponse> RegisterAsync(RegisterRequest request);
+        Task<AuthResponse> LoginAsync(LoginRequest request);
+        Task<AuthResponse> RefreshTokenAsync(string refreshToken);
+        Task LogoutAsync(string refreshToken);
     }
 }

@@ -12,20 +12,25 @@ namespace OmniCore.API.Controllers
         [HttpGet("me")]
         public IActionResult GetCurrentUser()
         {
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)
-                         ?? User.FindFirstValue("sub");
-
-            var email = User.FindFirstValue(ClaimTypes.Email)
-                        ?? User.FindFirstValue("email");
-
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            var email = User.FindFirstValue(ClaimTypes.Email);
             var fullName = User.FindFirstValue("fullName");
+            var role = User.FindFirstValue(ClaimTypes.Role);
 
             return Ok(new
             {
                 userId,
                 email,
-                fullName
+                fullName,
+                role
             });
+        }
+
+        [Authorize(Roles = "Admin")]
+        [HttpGet("all-users")]
+        public IActionResult GetAllUsers()
+        {
+            return Ok("Only admins can see this");
         }
     }
 }

@@ -9,9 +9,6 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
-
-// -------------------- SERVICES --------------------
-
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -53,9 +50,6 @@ builder.Services.AddSwaggerGen(options =>
 builder.Services.AddPersistence(builder.Configuration);
 builder.Services.AddInfrastructure();
 
-
-// -------------------- JWT AUTH --------------------
-
 var jwtSettings = builder.Configuration.GetSection("Jwt");
 
 builder.Services
@@ -78,8 +72,6 @@ builder.Services
         };
     });
 
-
-// -------------------- APP PIPELINE --------------------
 
 var app = builder.Build();
 

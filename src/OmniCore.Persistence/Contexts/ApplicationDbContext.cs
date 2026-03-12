@@ -19,6 +19,7 @@ namespace OmniCore.Persistence.Contexts
         public DbSet<User> Users => Set<User>();
 
         public DbSet<Notification> Notifications => Set<Notification>();
+        public DbSet<RefreshToken> RefreshTokens => Set<RefreshToken>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -28,6 +29,12 @@ namespace OmniCore.Persistence.Contexts
                 .HasOne(n => n.User)
                 .WithMany()
                 .HasForeignKey(n => n.UserId);
+
+            modelBuilder.Entity<RefreshToken>()
+                .HasOne(rt => rt.User)
+                .WithMany()
+                .HasForeignKey(rt => rt.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
     }
 }

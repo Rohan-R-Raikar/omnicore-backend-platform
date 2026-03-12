@@ -18,45 +18,33 @@ namespace OmniCore.API.Controllers
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequest request)
         {
-            try
-            {
-                var token = await _authService.RegisterAsync(request);
-
-                return Ok(new
-                {
-                    message = "User registered successfully",
-                    token
-                });
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(new
-                {
-                    error = ex.Message
-                });
-            }
+            var result = await _authService.RegisterAsync(request);
+            return Ok(result);
         }
 
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
-            try
-            {
-                var token = await _authService.LoginAsync(request);
+            var result = await _authService.LoginAsync(request);
+            return Ok(result);
+        }
 
-                return Ok(new
-                {
-                    message = "Login successful",
-                    token
-                });
-            }
-            catch (Exception ex)
+        [HttpPost("refresh")]
+        public async Task<IActionResult> RefreshToken(RefreshTokenRequest request)
+        {
+            var result = await _authService.RefreshTokenAsync(request.RefreshToken);
+            return Ok(result);
+        }
+
+        [HttpPost("logout")]
+        public async Task<IActionResult> Logout(LogoutRequest request)
+        {
+            await _authService.LogoutAsync(request.RefreshToken);
+
+            return Ok(new
             {
-                return Unauthorized(new
-                {
-                    error = ex.Message
-                });
-            }
+                message = "Logged out successfully"
+            });
         }
     }
 }
