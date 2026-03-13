@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "rZnn/ZlxSuk=",
+  "dgSpecHash": "/QLP/JD3Kew=",
   "success": true,
   "projectFilePath": "D:\\Rohan\\OmniCore\\src\\OmniCore.Infrastructure\\OmniCore.Infrastructure.csproj",
   "expectedPackageFiles": [
@@ -8,6 +8,9 @@
     "C:\\Users\\XD24100BT\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\bcrypt.net-next\\4.1.0\\bcrypt.net-next.4.1.0.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\1.1.1\\microsoft.bcl.asyncinterfaces.1.1.1.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.framework\\18.4.0\\microsoft.build.framework.18.4.0.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.tasks.core\\18.4.0\\microsoft.build.tasks.core.18.4.0.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.utilities.core\\18.4.0\\microsoft.build.utilities.core.18.4.0.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.data.sqlclient\\5.1.7\\microsoft.data.sqlclient.5.1.7.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.data.sqlclient.sni.runtime\\5.1.2\\microsoft.data.sqlclient.sni.runtime.5.1.2.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.entityframeworkcore\\8.0.25\\microsoft.entityframeworkcore.8.0.25.nupkg.sha512",

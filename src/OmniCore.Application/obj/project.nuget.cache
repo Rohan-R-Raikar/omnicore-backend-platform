@@ -1,8 +1,12 @@
 {
   "version": 2,
-  "dgSpecHash": "XmlxVQCBDVQ=",
+  "dgSpecHash": "vkTk0Rol5S0=",
   "success": true,
   "projectFilePath": "D:\\Rohan\\OmniCore\\src\\OmniCore.Application\\OmniCore.Application.csproj",
-  "expectedPackageFiles": [],
+  "expectedPackageFiles": [
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.framework\\18.4.0\\microsoft.build.framework.18.4.0.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.tasks.core\\18.4.0\\microsoft.build.tasks.core.18.4.0.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.utilities.core\\18.4.0\\microsoft.build.utilities.core.18.4.0.nupkg.sha512"
+  ],
   "logs": []
 }

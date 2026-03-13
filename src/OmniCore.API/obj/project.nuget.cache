@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "dgSpecHash": "pNgCuZED2V0=",
+  "dgSpecHash": "Pik67VBBfr0=",
   "success": true,
   "projectFilePath": "D:\\Rohan\\OmniCore\\src\\OmniCore.API\\OmniCore.API.csproj",
   "expectedPackageFiles": [
@@ -11,6 +11,9 @@
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.aspnetcore.authentication.jwtbearer\\8.0.25\\microsoft.aspnetcore.authentication.jwtbearer.8.0.25.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.aspnetcore.openapi\\8.0.6\\microsoft.aspnetcore.openapi.8.0.6.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\6.0.0\\microsoft.bcl.asyncinterfaces.6.0.0.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.framework\\18.4.0\\microsoft.build.framework.18.4.0.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.tasks.core\\18.4.0\\microsoft.build.tasks.core.18.4.0.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.utilities.core\\18.4.0\\microsoft.build.utilities.core.18.4.0.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.codeanalysis.analyzers\\3.3.3\\microsoft.codeanalysis.analyzers.3.3.3.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.codeanalysis.common\\4.5.0\\microsoft.codeanalysis.common.4.5.0.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.codeanalysis.csharp\\4.5.0\\microsoft.codeanalysis.csharp.4.5.0.nupkg.sha512",

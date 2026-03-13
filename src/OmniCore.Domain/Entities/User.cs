@@ -23,5 +23,9 @@ namespace OmniCore.Domain.Entities
         public ICollection<RefreshToken> RefreshTokens { get; set; } = new List<RefreshToken>();
 
         public ICollection<Notification> Notifications { get; set; } = new List<Notification>();
+
+        public ICollection<Product> Products { get; set; } = new List<Product>();
+
+        public ICollection<Order> Orders { get; set; } = new List<Order>();
     }
 }

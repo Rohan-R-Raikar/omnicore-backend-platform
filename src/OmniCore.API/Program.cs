@@ -3,7 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
+using OmniCore.Application.Interfaces;
 using OmniCore.Infrastructure;
+using OmniCore.Infrastructure.Services;
 using OmniCore.Persistence;
 using System.Text;
 
@@ -12,6 +14,7 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddScoped<IOrderService, OrderService>();
 
 builder.Services.AddSwaggerGen(options =>
 {

@@ -1,12 +1,15 @@
 {
   "version": 2,
-  "dgSpecHash": "oua6RQd/iTA=",
+  "dgSpecHash": "ouuCh9I8z7k=",
   "success": true,
   "projectFilePath": "D:\\Rohan\\OmniCore\\src\\OmniCore.Persistence\\OmniCore.Persistence.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\XD24100BT\\.nuget\\packages\\azure.core\\1.38.0\\azure.core.1.38.0.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\azure.identity\\1.11.4\\azure.identity.1.11.4.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\1.1.1\\microsoft.bcl.asyncinterfaces.1.1.1.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.framework\\18.4.0\\microsoft.build.framework.18.4.0.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.tasks.core\\18.4.0\\microsoft.build.tasks.core.18.4.0.nupkg.sha512",
+    "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.build.utilities.core\\18.4.0\\microsoft.build.utilities.core.18.4.0.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.csharp\\4.5.0\\microsoft.csharp.4.5.0.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.data.sqlclient\\5.1.7\\microsoft.data.sqlclient.5.1.7.nupkg.sha512",
     "C:\\Users\\XD24100BT\\.nuget\\packages\\microsoft.data.sqlclient.sni.runtime\\5.1.2\\microsoft.data.sqlclient.sni.runtime.5.1.2.nupkg.sha512",
