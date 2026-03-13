@@ -15,6 +15,7 @@ builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 builder.Services.AddSwaggerGen(options =>
 {
