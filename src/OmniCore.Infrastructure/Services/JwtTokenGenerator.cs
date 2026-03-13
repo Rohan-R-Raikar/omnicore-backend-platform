@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using OmniCore.Application.Interfaces;
 using OmniCore.Domain.Entities;
@@ -13,62 +14,78 @@ namespace OmniCore.Infrastructure.Services
     public class JwtTokenGenerator : IJwtTokenGenerator
     {
         private readonly IConfiguration _configuration;
+        private readonly ILogger<JwtTokenGenerator> _logger;
 
-        public JwtTokenGenerator(IConfiguration configuration)
+        public JwtTokenGenerator(IConfiguration configuration,
+            ILogger<JwtTokenGenerator> logger)
         {
             _configuration = configuration;
+            _logger = logger;
         }
 
         public string GenerateToken(User user, IList<string> roles, IList<string> permissions)
         {
-            var jwtSettings = _configuration.GetSection("Jwt");
-
-            var keyValue = jwtSettings["Key"];
-            if (string.IsNullOrWhiteSpace(keyValue))
-                throw new InvalidOperationException("JWT Key is not configured.");
-
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyValue));
-            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-
-            var claims = new List<Claim>
+            try
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
-                new Claim("fullName", user.FullName ?? string.Empty)
-            };
+                _logger.LogInformation("Generating JWT token for user {UserId}", user.Id);
+                var jwtSettings = _configuration.GetSection("Jwt");
 
-            if (roles != null)
-            {
-                foreach (var role in roles)
+                var keyValue = jwtSettings["Key"];
+                if (string.IsNullOrWhiteSpace(keyValue))
                 {
-                    claims.Add(new Claim(ClaimTypes.Role, role));
+                    _logger.LogError("JWT Key is not configured.");
+                    throw new InvalidOperationException("JWT Key is not configured.");
                 }
-            }
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(keyValue));
+                var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
-            if (permissions != null)
-            {
-                foreach (var permission in permissions)
+                var claims = new List<Claim>
                 {
-                    claims.Add(new Claim("permission", permission));
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                    new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                    new Claim(ClaimTypes.Email, user.Email ?? string.Empty),
+                    new Claim("fullName", user.FullName ?? string.Empty)
+                };
+
+                if (roles != null)
+                {
+                    foreach (var role in roles)
+                    {
+                        claims.Add(new Claim(ClaimTypes.Role, role));
+                    }
                 }
-            }
 
-            double expiryMinutes;
-            if (!double.TryParse(jwtSettings["ExpiryMinutes"], out expiryMinutes))
+                if (permissions != null)
+                {
+                    foreach (var permission in permissions)
+                    {
+                        claims.Add(new Claim("permission", permission));
+                    }
+                }
+
+                double expiryMinutes;
+                if (!double.TryParse(jwtSettings["ExpiryMinutes"], out expiryMinutes))
+                {
+                    expiryMinutes = 60;
+                }
+
+                var token = new JwtSecurityToken(
+                    issuer: jwtSettings["Issuer"],
+                    audience: jwtSettings["Audience"],
+                    claims: claims,
+                    expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
+                    signingCredentials: creds
+                );
+
+                _logger.LogInformation("JWT token generated successfully for user {UserId}", user.Id);
+
+                return new JwtSecurityTokenHandler().WriteToken(token);
+            }
+            catch (Exception ex)
             {
-                expiryMinutes = 60; 
+                _logger.LogError(ex, "Error generating JWT token for user {UserId}", user?.Id);
+                throw;
             }
-
-            var token = new JwtSecurityToken(
-                issuer: jwtSettings["Issuer"],
-                audience: jwtSettings["Audience"],
-                claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
-                signingCredentials: creds
-            );
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
         }
     }
 }
