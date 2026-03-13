@@ -45,9 +45,19 @@ namespace OmniCore.Infrastructure.Services
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            var role = await _context.Roles.FirstAsync(r => r.Id == user.RoleId);
+            var role = await _context.Roles
+                                .Include(r => r.RolePermissions)
+                                .ThenInclude(rp => rp.Permission)
+                                .FirstOrDefaultAsync(r => r.Id == user.RoleId);
+
+            if (role == null)
+                throw new Exception("Assigned role does not exist");
+
             var roles = new List<string> { role.Name };
-            var permissions = role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
+            var permissions = role.RolePermissions
+                                  .Select(rp => rp.Permission?.Code ?? string.Empty)
+                                  .Where(p => !string.IsNullOrEmpty(p))
+                                  .ToList();
             var accessToken = _jwt.GenerateToken(user, roles, permissions);
             var refreshToken = await CreateRefreshToken(user.Id);
 
@@ -62,7 +72,7 @@ namespace OmniCore.Infrastructure.Services
         public async Task<AuthResponse> LoginAsync(LoginRequest request, CancellationToken ct)
         {
             var user = await _context.Users
-                                    .Include(u => u.Role)   
+                                    .Include(u => u.Role)
                                     .ThenInclude(r => r.RolePermissions)
                                     .ThenInclude(rp => rp.Permission)
                                     .FirstOrDefaultAsync(x => x.Email == request.Email, ct);
@@ -84,8 +94,14 @@ namespace OmniCore.Infrastructure.Services
             _context.RefreshTokens.RemoveRange(existingTokens);
             await _context.SaveChangesAsync(ct);
 
+            if (user.Role == null)
+                throw new Exception("User has no role assigned");
+
             var roles = new List<string> { user.Role.Name };
-            var permissions = user.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
+            var permissions = user.Role.RolePermissions
+                                  .Select(rp => rp.Permission?.Code ?? string.Empty)
+                                  .Where(p => !string.IsNullOrEmpty(p))
+                                  .ToList();
             var accessToken = _jwt.GenerateToken(user, roles, permissions);
             var refreshToken = await CreateRefreshToken(user.Id);
 
@@ -96,46 +112,37 @@ namespace OmniCore.Infrastructure.Services
                 ExpiresAt = GetAccessTokenExpiry()
             };
         }
-
-        //public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
-        //{
-        //    var token = await _context.RefreshTokens
-        //        .Include(x => x.User)
-        //        .FirstOrDefaultAsync(x => x.Token == refreshToken);
-
-        //    if (token == null || token.IsRevoked || token.ExpiresAt < DateTime.UtcNow)
-        //        throw new Exception("Invalid refresh token");
-
-        //    var accessToken = _jwt.GenerateToken(token.User);
-
-        //    return new AuthResponse
-        //    {
-        //        AccessToken = accessToken,
-        //        RefreshToken = refreshToken
-        //    };
-        //}
-
         public async Task<AuthResponse> RefreshTokenAsync(string refreshToken)
         {
             var token = await _context.RefreshTokens
                 .Include(x => x.User)
+                .ThenInclude(u => u.Role)
+                .ThenInclude(r => r.RolePermissions)
+                .ThenInclude(rp => rp.Permission)
                 .FirstOrDefaultAsync(x => x.Token == refreshToken);
 
             if (token == null || token.IsRevoked || token.ExpiresAt < DateTime.UtcNow)
                 throw new Exception("Invalid refresh token");
 
-            token.IsRevoked = true;
+            if (token.User == null)
+                throw new Exception("User not found for this refresh token");
 
-            var roles = new List<string> { token.User.Role.Name};
-            var permissions = token.User.Role.RolePermissions.Select(rp => rp.Permission.Code).ToList();
-            var accessToken = _jwt.GenerateToken(token.User, roles, permissions);
+            var role = token.User.Role;
+
+            if (role == null)
+                throw new Exception("User has no role assigned");
+
+            var roles = new List<string> { role.Name };
+            var permissions = role.RolePermissions.Select(rp => rp.Permission?.Code ?? string.Empty)
+                                                  .Where(p => !string.IsNullOrEmpty(p))
+                                                  .ToList();
 
             token.IsRevoked = true;
             token.RevokedAt = DateTime.UtcNow;
 
-            var newRefreshToken = Convert.ToBase64String(
-                RandomNumberGenerator.GetBytes(64)
-            );
+            var accessToken = _jwt.GenerateToken(token.User, roles, permissions);
+
+            var newRefreshToken = Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
 
             var refreshTokenEntity = new RefreshToken
             {
@@ -146,7 +153,6 @@ namespace OmniCore.Infrastructure.Services
             };
 
             _context.RefreshTokens.Add(refreshTokenEntity);
-
             await _context.SaveChangesAsync();
 
             return new AuthResponse
@@ -192,9 +198,8 @@ namespace OmniCore.Infrastructure.Services
         }
         private DateTime GetAccessTokenExpiry()
         {
-            var minutes = double.Parse(
-                _configuration["Jwt:ExpiryMinutes"]!
-            );
+            if (!double.TryParse(_configuration["Jwt:ExpiryMinutes"], out var minutes))
+                minutes = 60; 
 
             return DateTime.UtcNow.AddMinutes(minutes);
         }

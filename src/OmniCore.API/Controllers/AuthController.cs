@@ -36,7 +36,14 @@ namespace OmniCore.API.Controllers
             return Ok(result);
         }
 
+        //[HttpPost("logout")]
+        //public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
+        //{
+        //    await _authService.LogoutAsync(request.RefreshToken);
+        //    return NoContent();
+        //}
         [HttpPost("logout")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
         public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
             await _authService.LogoutAsync(request.RefreshToken);
