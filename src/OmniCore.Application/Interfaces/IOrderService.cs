@@ -1,4 +1,5 @@
-﻿using OmniCore.Application.DTOs.Orders;
+﻿using OmniCore.Application.DTOs.Order;
+using OmniCore.Application.DTOs.Orders;
 using OmniCore.Domain.Entities;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,9 @@ namespace OmniCore.Application.Interfaces
 {
     public interface IOrderService
     {
-        Task<Guid> PlaceOrderAsync(Guid customerId, CreateOrderRequest request);
+        Task<OrderResponse> CreateOrderAsync(CreateOrderRequest request);
+        Task<OrderResponse?> GetByIdAsync(Guid orderId);
+        Task<List<OrderResponse>> GetAllByCustomerAsync(Guid customerId);
+        Task CancelOrderAsync(Guid orderId);
     }
 }

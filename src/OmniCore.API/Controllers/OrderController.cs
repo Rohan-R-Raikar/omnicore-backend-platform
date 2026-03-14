@@ -1,0 +1,49 @@
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Mvc;
+using OmniCore.Application.DTOs.Orders;
+using OmniCore.Application.Interfaces;
+using System.Security.Claims;
+
+namespace OmniCore.API.Controllers
+{
+    [ApiController]
+    [Route("api/orders")]
+    public class OrderController : ControllerBase
+    {
+        private readonly IOrderService _service;
+
+        public OrderController(IOrderService service)
+        {
+            _service = service;
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> Create(CreateOrderRequest request)
+        {
+            return Ok(await _service.CreateOrderAsync(request));
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetById(Guid id)
+        {
+            var order = await _service.GetByIdAsync(id);
+            if (order == null) return NotFound();
+            return Ok(order);
+        }
+
+        [HttpGet("customer/{customerId}")]
+        public async Task<IActionResult> GetByCustomer(Guid customerId)
+        {
+            var orders = await _service.GetAllByCustomerAsync(customerId);
+            return Ok(orders);
+        }
+
+        [HttpPost("{id}/cancel")]
+        public async Task<IActionResult> Cancel(Guid id)
+        {
+            await _service.CancelOrderAsync(id);
+            return NoContent();
+        }
+    }
+}
