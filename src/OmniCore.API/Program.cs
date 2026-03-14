@@ -1,3 +1,4 @@
+using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -5,6 +6,7 @@ using Microsoft.OpenApi;
 using Microsoft.OpenApi.Models;
 using OmniCore.Application.Interfaces;
 using OmniCore.Infrastructure;
+using OmniCore.Infrastructure.BackgroundJobs;
 using OmniCore.Infrastructure.Services;
 using OmniCore.Persistence;
 using System.Text;
@@ -17,6 +19,19 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddScoped<IOrderService, OrderService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IProductService, ProductService>();
+
+builder.Services.AddScoped<OrderCleanupJob>();
+
+builder.Services.AddHangfire(config =>
+    config.UseSqlServerStorage(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+builder.Services.AddHangfireServer();
+
+RecurringJob.AddOrUpdate<OrderCleanupJob>(
+    "cancel-expired-orders",
+    job => job.CancelExpiredOrders(),
+    "*/5 * * * *"
+);
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -90,6 +105,8 @@ if (app.Environment.IsDevelopment())
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseHangfireDashboard("/hangfire");
 
 app.MapControllers();
 
