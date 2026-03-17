@@ -24,7 +24,7 @@ namespace OmniCore.Domain.Entities
         // Indicates if product is active
         public bool IsActive { get; set; } = true;
 
-        // Indicates if product is active
+        // Seller who owns the product
         public Guid SellerId { get; set; }
 
         public User Seller { get; set; } = null!;

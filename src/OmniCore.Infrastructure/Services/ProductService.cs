@@ -1,5 +1,6 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using OmniCore.Application.DTOs.Common;
 using OmniCore.Application.DTOs.Product;
 using OmniCore.Application.Interfaces;
 using OmniCore.Domain.Entities;
@@ -167,6 +168,56 @@ namespace OmniCore.Infrastructure.Services
                 _logger.LogError(ex, "Error deleting product {Id}", id);
                 throw;
             }
+        }
+
+        public async Task<IEnumerable<ProductDto>> GetAllAsync(QueryParams query)
+        {
+            var products = _context.Products
+                .Include(p => p.Category)
+                .Include(p => p.Seller)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(query.Search))
+            {
+                var search = query.Search.ToLower();
+
+                products = products.Where(p =>
+                    p.Name.ToLower().Contains(search) ||
+                    p.Category.Name.ToLower().Contains(search));
+            }
+
+            products = query.SortBy?.ToLower() switch
+            {
+                "price" => query.SortOrder == "desc"
+                    ? products.OrderByDescending(p => p.Price)
+                    : products.OrderBy(p => p.Price),
+
+                "name" => query.SortOrder == "desc"
+                    ? products.OrderByDescending(p => p.Name)
+                    : products.OrderBy(p => p.Name),
+
+                _ => products.OrderBy(p => p.Id)
+            };
+
+            products = products
+                .Skip((query.PageNumber - 1) * query.PageSize)
+                .Take(query.PageSize);
+
+            return await products.Select(p => new ProductDto
+            {
+                Id = p.Id,
+                Name = p.Name,
+                Description = p.Description,
+                Price = p.Price,
+                Stock = p.Stock,
+                IsActive = p.IsActive,
+
+                CategoryId = p.CategoryId,
+                CategoryName = p.Category.Name,
+
+                SellerId = p.SellerId,
+                SellerName = p.Seller.FullName
+            }).ToListAsync();
         }
     }
 }

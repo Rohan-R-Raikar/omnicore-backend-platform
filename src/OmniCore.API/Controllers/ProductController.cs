@@ -1,8 +1,10 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using OmniCore.Application.DTOs.Common;
 using OmniCore.Application.DTOs.Product;
 using OmniCore.Application.Interfaces;
+using OmniCore.Infrastructure.Services;
 using System.Security.Claims;
 
 namespace OmniCore.API.Controllers
@@ -56,6 +58,13 @@ namespace OmniCore.API.Controllers
         {
             await _service.DeleteAsync(id);
             return NoContent();
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> GetAll([FromQuery] QueryParams queryParams)
+        {
+            var products = await _service.GetAllAsync(queryParams);
+            return Ok(products);
         }
     }
 }

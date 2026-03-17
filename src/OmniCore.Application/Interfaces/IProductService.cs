@@ -1,4 +1,5 @@
-﻿using OmniCore.Application.DTOs.Product;
+﻿using OmniCore.Application.DTOs.Common;
+using OmniCore.Application.DTOs.Product;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,5 +19,7 @@ namespace OmniCore.Application.Interfaces
         Task UpdateAsync(Guid id, UpdateProductRequest request);
 
         Task DeleteAsync(Guid id);
+
+        Task<IEnumerable<ProductDto>> GetAllAsync(QueryParams queryParams);
     }
 }
