@@ -1,5 +1,6 @@
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
@@ -103,6 +104,7 @@ builder.Services
 
 builder.Services.AddRateLimiter(options =>
 {
+    // Global fallback limiter
     options.GlobalLimiter = PartitionedRateLimiter.Create<HttpContext, string>(context =>
         RateLimitPartition.GetFixedWindowLimiter(
             partitionKey: context.Connection.RemoteIpAddress?.ToString() ?? "unknown",
@@ -114,12 +116,39 @@ builder.Services.AddRateLimiter(options =>
                 QueueLimit = 2
             }));
 
+    // Auth endpoints (STRICT)
+    options.AddFixedWindowLimiter("authPolicy", opt =>
+    {
+        opt.PermitLimit = 5;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 0;
+    });
+
+    // Order endpoints (MODERATE)
+    options.AddFixedWindowLimiter("orderPolicy", opt =>
+    {
+        opt.PermitLimit = 20;
+        opt.Window = TimeSpan.FromMinutes(1);
+        opt.QueueLimit = 2;
+    });
+
+    // General usage (RELAXED)
+    options.AddFixedWindowLimiter("relaxedPolicy", opt =>
+    {
+        opt.PermitLimit = 50;
+        opt.Window = TimeSpan.FromMinutes(1);
+    });
+
+    // When limit exceeded
     options.OnRejected = async (context, token) =>
     {
         context.HttpContext.Response.StatusCode = 429;
 
-        await context.HttpContext.Response.WriteAsync(
-            "Too many requests. Please try again later.", token);
+        await context.HttpContext.Response.WriteAsJsonAsync(new
+        {
+            status = 429,
+            message = "Too many requests. Please try again later."
+        }, token);
     };
 });
 
