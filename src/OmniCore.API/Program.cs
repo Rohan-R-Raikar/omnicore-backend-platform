@@ -25,6 +25,8 @@ var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddMemoryCache();
 
+builder.Services.AddResponseCaching();
+
 builder.Host.UseSerilog();
 
 builder.Services.AddControllers();
@@ -165,6 +167,8 @@ if (app.Environment.IsDevelopment())
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseSerilogRequestLogging();
 app.UseRateLimiter();
+
+app.UseResponseCaching();
 
 // app.UseHttpsRedirection(); // optional for local dev
 

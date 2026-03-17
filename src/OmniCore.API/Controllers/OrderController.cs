@@ -30,8 +30,11 @@ namespace OmniCore.API.Controllers
         // Relaxed (read operation)
         [HttpGet("{id}")]
         [EnableRateLimiting("relaxedPolicy")]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any, NoStore = false)]
         public async Task<IActionResult> GetById(Guid id)
         {
+            Response.Headers["Cache-Control"] = "public,max-age=60";
+
             var order = await _service.GetByIdAsync(id);
             if (order == null) return NotFound();
             return Ok(order);
@@ -40,8 +43,11 @@ namespace OmniCore.API.Controllers
         // Moderate
         [HttpGet("customer/{customerId}")]
         [EnableRateLimiting("orderPolicy")]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
         public async Task<IActionResult> GetByCustomer(Guid customerId)
         {
+            Response.Headers["Cache-Control"] = "public,max-age=60";
+
             var orders = await _service.GetAllByCustomerAsync(customerId);
             return Ok(orders);
         }
