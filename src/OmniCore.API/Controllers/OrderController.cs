@@ -48,7 +48,7 @@ namespace OmniCore.API.Controllers
 
         // Moderate (important action)
         [HttpPost("{id}/cancel")]
-        // Moderate (important action)
+        [EnableRateLimiting("orderPolicy")]
         public async Task<IActionResult> Cancel(Guid id)
         {
             await _service.CancelOrderAsync(id);

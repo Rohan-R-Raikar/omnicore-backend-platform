@@ -1,4 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using OmniCore.Application.DTOs.Order;
 using OmniCore.Application.DTOs.Orders;
@@ -18,11 +21,15 @@ namespace OmniCore.Infrastructure.Services
     {
         private readonly ApplicationDbContext _context;
         private readonly ILogger<OrderService> _logger;
+        private readonly IMemoryCache _cache;
 
-        public OrderService(ApplicationDbContext context, ILogger<OrderService> logger)
+        public OrderService(ApplicationDbContext context, 
+                            ILogger<OrderService> logger,
+                            IMemoryCache cache)
         {
             _context = context;
             _logger = logger;
+            _cache = cache;
         }
 
         public async Task<OrderResponse> CreateOrderAsync(CreateOrderRequest request)
@@ -81,6 +88,8 @@ namespace OmniCore.Infrastructure.Services
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
 
+                _cache.Remove($"orders_customer_{request.CustomerId}");
+
                 return new OrderResponse
                 {
                     Id = order.Id,
@@ -109,6 +118,12 @@ namespace OmniCore.Infrastructure.Services
 
         public async Task<OrderResponse?> GetByIdAsync(Guid orderId)
         {
+            var cacheKey = $"order_{orderId}";
+
+            if (_cache.TryGetValue(cacheKey, out OrderResponse cachedOrder))
+            {
+                return cachedOrder;
+            }
             try
             {
                 var order = await _context.Orders
@@ -119,7 +134,7 @@ namespace OmniCore.Infrastructure.Services
                 if (order == null)
                     return null;
 
-                return new OrderResponse
+                var result = new OrderResponse
                 {
                     Id = order.Id,
                     CustomerId = order.CustomerId,
@@ -134,6 +149,16 @@ namespace OmniCore.Infrastructure.Services
                         Quantity = oi.Quantity
                     }).ToList()
                 };
+
+                //_cache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
+
+                _cache.Set(cacheKey, result, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+                    SlidingExpiration = TimeSpan.FromMinutes(2)
+                });
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -144,6 +169,13 @@ namespace OmniCore.Infrastructure.Services
 
         public async Task<List<OrderResponse>> GetAllByCustomerAsync(Guid customerId)
         {
+            var cacheKey = $"orders_customer_{customerId}";
+
+            if (_cache.TryGetValue(cacheKey, out List<OrderResponse> cachedOrders))
+            {
+                return cachedOrders;
+            }
+
             try
             {
                 var orders = await _context.Orders
@@ -152,7 +184,7 @@ namespace OmniCore.Infrastructure.Services
                     .ThenInclude(oi => oi.Product)
                     .ToListAsync();
 
-                return orders.Select(order => new OrderResponse
+                var result = orders.Select(order => new OrderResponse
                 {
                     Id = order.Id,
                     CustomerId = order.CustomerId,
@@ -167,6 +199,16 @@ namespace OmniCore.Infrastructure.Services
                         Quantity = oi.Quantity
                     }).ToList()
                 }).ToList();
+
+                //_cache.Set(cacheKey, result, TimeSpan.FromMinutes(5));
+
+                _cache.Set(cacheKey, result, new MemoryCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(5),
+                    SlidingExpiration = TimeSpan.FromMinutes(2)
+                });
+
+                return result;
             }
             catch (Exception ex)
             {
@@ -204,6 +246,9 @@ namespace OmniCore.Infrastructure.Services
 
                 await _context.SaveChangesAsync();
                 await transaction.CommitAsync();
+
+                _cache.Remove($"order_{orderId}");
+                _cache.Remove($"orders_customer_{order.CustomerId}");
             }
             catch (Exception ex)
             {
