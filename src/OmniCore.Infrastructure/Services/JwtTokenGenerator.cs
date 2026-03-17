@@ -29,7 +29,9 @@ namespace OmniCore.Infrastructure.Services
             {
                 _logger.LogInformation("Generating JWT token for user {UserId}", user.Id);
                 var jwtSettings = _configuration.GetSection("Jwt");
-
+                Console.WriteLine(jwtSettings["Key"]);
+                if (string.IsNullOrEmpty(jwtSettings["Key"]))
+                    throw new Exception("JWT Key not loaded");
                 var keyValue = jwtSettings["Key"];
                 if (string.IsNullOrWhiteSpace(keyValue))
                 {
