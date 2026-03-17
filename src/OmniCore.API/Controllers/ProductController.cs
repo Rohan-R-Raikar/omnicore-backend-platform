@@ -31,7 +31,7 @@ namespace OmniCore.API.Controllers
             return Ok(await _service.CreateAsync(request, sellerId));
         }
 
-        [HttpGet]
+        [HttpGet("all")]
         public async Task<IActionResult> GetAll()
         {
             return Ok(await _service.GetAllAsync());

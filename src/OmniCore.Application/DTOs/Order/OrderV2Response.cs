@@ -14,6 +14,5 @@ namespace OmniCore.Application.DTOs.Order
         public string Status { get; set; }
         public DateTime CreatedAt { get; set; }
         public int TotalItems { get; set; }
-        public IEnumerable<OrderItemResponse> Items { get; set; }
     }
 }

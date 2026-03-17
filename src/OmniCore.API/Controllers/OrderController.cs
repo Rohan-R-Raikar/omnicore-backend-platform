@@ -65,8 +65,7 @@ namespace OmniCore.API.Controllers
                 TotalPrice = order.TotalPrice,
                 Status = order.Status,
                 CreatedAt = order.CreatedAt,
-                TotalItems = order.Items.Count,
-                Items = order.Items
+                TotalItems = order.Items?.Count ?? 0
             };
 
             return Ok(result);
