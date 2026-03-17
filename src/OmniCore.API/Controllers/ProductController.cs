@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using OmniCore.Application.DTOs.Common;
@@ -10,7 +11,8 @@ using System.Security.Claims;
 namespace OmniCore.API.Controllers
 {
     [ApiController]
-    [Route("api/products")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     public class ProductController : ControllerBase
     {
         private readonly IProductService _service;

@@ -10,7 +10,8 @@ using System.Security.Claims;
 namespace OmniCore.API.Controllers
 {
     [ApiController]
-    [Route("api/orders")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _service;

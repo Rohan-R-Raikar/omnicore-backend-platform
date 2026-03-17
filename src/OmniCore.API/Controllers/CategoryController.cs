@@ -1,11 +1,13 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
 using OmniCore.Application.DTOs.Category;
 using OmniCore.Application.Interfaces;
 
 namespace OmniCore.API.Controllers
 {
     [ApiController]
-    [Route("api/categories")]
+    [Route("api/v{version:apiVersion}/[controller]")]
+    [ApiVersion("1.0")]
     public class CategoryController : ControllerBase
     {
         private readonly ICategoryService _service;
