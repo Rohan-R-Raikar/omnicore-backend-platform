@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authorization;
+﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
@@ -27,6 +28,48 @@ namespace OmniCore.API.Controllers
             return Ok(await _service.CreateOrderAsync(request));
         }
 
+        // V1 - Basic
+        [HttpGet("{id}")]
+        [MapToApiVersion("1.0")]
+        [EnableRateLimiting("relaxedPolicy")]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
+        public async Task<IActionResult> GetByIdV1(Guid id)
+        {
+            Response.Headers["Cache-Control"] = "public,max-age=60";
+
+            var order = await _service.GetByIdAsync(id);
+            if (order == null) return NotFound();
+
+            return Ok(order);
+        }
+
+        // V2 - Enhanced Response
+        [HttpGet("{id}")]
+        [MapToApiVersion("2.0")]
+        [EnableRateLimiting("relaxedPolicy")]
+        [ResponseCache(Duration = 60, Location = ResponseCacheLocation.Any)]
+        public async Task<IActionResult> GetByIdV2(Guid id)
+        {
+            Response.Headers["Cache-Control"] = "public,max-age=60";
+
+            var order = await _service.GetByIdAsync(id);
+            if (order == null) return NotFound();
+
+            var result = new
+            {
+                order.Id,
+                order.CustomerId,
+                order.TotalPrice,
+                order.Status,
+                order.CreatedAt,
+                TotalItems = order.Items.Count,
+                Items = order.Items
+            };
+
+            return Ok(result);
+        }
+
+        /*
         // Relaxed (read operation)
         [HttpGet("{id}")]
         [EnableRateLimiting("relaxedPolicy")]
@@ -39,6 +82,7 @@ namespace OmniCore.API.Controllers
             if (order == null) return NotFound();
             return Ok(order);
         }
+        */
 
         // Moderate
         [HttpGet("customer/{customerId}")]

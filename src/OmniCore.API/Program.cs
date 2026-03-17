@@ -1,3 +1,5 @@
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using Hangfire;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
@@ -29,6 +31,18 @@ builder.Services.AddResponseCaching();
 
 builder.Host.UseSerilog();
 
+builder.Services.AddApiVersioning(options =>
+{
+    options.DefaultApiVersion = new Asp.Versioning.ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
+})
+.AddApiExplorer(options =>
+{
+    options.GroupNameFormat = "'v'VVV"; // v1
+    options.SubstituteApiVersionInUrl = true;
+});
+
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
@@ -45,12 +59,6 @@ builder.Services.AddHangfireServer();
 
 builder.Services.AddSwaggerGen(options =>
 {
-    options.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "OmniCore API",
-        Version = "v1"
-    });
-
     options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
         Description = "Enter JWT like: Bearer {your token}",
@@ -158,11 +166,19 @@ builder.Services.AddRateLimiter(options =>
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
+app.UseSwagger();
+
+app.UseSwaggerUI(options =>
 {
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+    var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+
+    foreach (var description in provider.ApiVersionDescriptions)
+    {
+        options.SwaggerEndpoint(
+            $"/swagger/{description.GroupName}/swagger.json",
+            description.GroupName.ToUpperInvariant());
+    }
+});
 
 app.UseMiddleware<ExceptionMiddleware>();
 app.UseSerilogRequestLogging();
