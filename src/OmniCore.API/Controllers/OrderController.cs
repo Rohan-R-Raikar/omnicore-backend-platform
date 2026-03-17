@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using OmniCore.Application.DTOs.Order;
 using OmniCore.Application.DTOs.Orders;
 using OmniCore.Application.Interfaces;
 using System.Security.Claims;
@@ -12,6 +13,7 @@ namespace OmniCore.API.Controllers
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]")]
     [ApiVersion("1.0")]
+    [ApiVersion("2.0")]
     public class OrderController : ControllerBase
     {
         private readonly IOrderService _service;
@@ -56,13 +58,13 @@ namespace OmniCore.API.Controllers
             var order = await _service.GetByIdAsync(id);
             if (order == null) return NotFound();
 
-            var result = new
+            var result = new OrderV2Response
             {
-                order.Id,
-                order.CustomerId,
-                order.TotalPrice,
-                order.Status,
-                order.CreatedAt,
+                Id = order.Id,
+                CustomerId = order.CustomerId,
+                TotalPrice = order.TotalPrice,
+                Status = order.Status,
+                CreatedAt = order.CreatedAt,
                 TotalItems = order.Items.Count,
                 Items = order.Items
             };
