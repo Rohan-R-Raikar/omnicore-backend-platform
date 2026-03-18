@@ -1,6 +1,8 @@
 ﻿using Asp.Versioning;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using OmniCore.Application.DTOs.Category;
+using OmniCore.Application.DTOs.Common;
 using OmniCore.Application.Interfaces;
 
 namespace OmniCore.API.Controllers
@@ -21,13 +23,14 @@ namespace OmniCore.API.Controllers
         public async Task<IActionResult> Create(CreateCategoryRequest request)
         {
             var result = await _service.CreateAsync(request);
-            return Ok(result);
+            return Ok(new ApiResponse<object>(result));
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await _service.GetAllAsync());
+            var result = await _service.GetAllAsync();
+            return Ok(new ApiResponse<IEnumerable<object>>(result));
         }
 
         [HttpGet("{id}")]
@@ -38,21 +41,21 @@ namespace OmniCore.API.Controllers
             if (result == null)
                 return NotFound();
 
-            return Ok(result);
+            return Ok(new ApiResponse<object>(result));
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, UpdateCategoryRequest request)
         {
             await _service.UpdateAsync(id, request);
-            return NoContent();
+            return Ok(new ApiResponse<object>(null, "Categoty Updated Succefully"));
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
             await _service.DeleteAsync(id);
-            return NoContent();
+            return Ok(new ApiResponse<object>(null, "Categoty Deleted Succefully"));
         }
     }
 }

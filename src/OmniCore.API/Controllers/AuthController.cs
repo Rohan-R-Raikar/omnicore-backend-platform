@@ -2,6 +2,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 using OmniCore.Application.DTOs.Auth;
+using OmniCore.Application.DTOs.Common;
 using OmniCore.Application.Interfaces;
 
 namespace OmniCore.API.Controllers
@@ -24,7 +25,8 @@ namespace OmniCore.API.Controllers
         public async Task<IActionResult> Register([FromBody] RegisterRequest request)
         {
             var result = await _authService.RegisterAsync(request);
-            return Ok(result);
+            //return Ok(result);
+            return Ok(new ApiResponse<object>(result, "User Registered Successfully !"));
         }
 
         // VERY STRICT (brute force protection)
@@ -33,7 +35,7 @@ namespace OmniCore.API.Controllers
         public async Task<IActionResult> Login([FromBody] LoginRequest request, CancellationToken ct)
         {
             var result = await _authService.LoginAsync(request, ct);
-            return Ok(result);
+            return Ok(new ApiResponse<object>(result, "Login Successfull !"));
         }
 
         // Moderate
@@ -42,7 +44,7 @@ namespace OmniCore.API.Controllers
         public async Task<IActionResult> RefreshToken([FromBody] RefreshTokenRequest request)
         {
             var result = await _authService.RefreshTokenAsync(request.RefreshToken);
-            return Ok(result);
+            return Ok(new ApiResponse<object>(result, "Here is you Refresh Token"));
         }
 
         //[HttpPost("logout")]
@@ -59,7 +61,7 @@ namespace OmniCore.API.Controllers
         public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
             await _authService.LogoutAsync(request.RefreshToken);
-            return NoContent();
+            return Ok(new ApiResponse<object>(null, "User is Logged Out Successfully"));
         }
     }
 }

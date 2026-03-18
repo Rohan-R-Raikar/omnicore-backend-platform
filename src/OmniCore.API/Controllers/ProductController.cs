@@ -26,15 +26,20 @@ namespace OmniCore.API.Controllers
         [HttpPost]
         public async Task<IActionResult> Create(CreateProductRequest request)
         {
-            var sellerId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            //var sellerId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            //return Ok(await _service.CreateAsync(request, sellerId));
 
-            return Ok(await _service.CreateAsync(request, sellerId));
+            var sellerId = Guid.Parse(User.FindFirst(ClaimTypes.NameIdentifier)!.Value);
+            var result =  await _service.CreateAsync(request, sellerId);
+
+            return Ok(new ApiResponse<object>(result));
         }
 
         [HttpGet("all")]
         public async Task<IActionResult> GetAll()
         {
-            return Ok(await _service.GetAllAsync());
+            var result = await _service.GetAllAsync();
+            return Ok(new ApiResponse<object>(result));
         }
 
         [HttpGet("{id}")]
@@ -45,28 +50,30 @@ namespace OmniCore.API.Controllers
             if (product == null)
                 return NotFound();
 
-            return Ok(product);
+            return Ok(new ApiResponse<object>(product));
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(Guid id, UpdateProductRequest request)
         {
             await _service.UpdateAsync(id, request);
-            return NoContent();
+
+            return Ok(new ApiResponse<string>(null, "Product Updated successfully"));
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(Guid id)
         {
             await _service.DeleteAsync(id);
-            return NoContent();
+
+            return Ok(new ApiResponse<string>(null, "Product Deleted successfully"));
         }
 
         [HttpGet]
         public async Task<IActionResult> GetAll([FromQuery] QueryParams queryParams)
         {
             var products = await _service.GetAllAsync(queryParams);
-            return Ok(products);
+            return Ok(new ApiResponse<object>(products));
         }
     }
 }

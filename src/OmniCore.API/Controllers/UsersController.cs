@@ -1,6 +1,7 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using OmniCore.Application.DTOs.Common;
 using System.Security.Claims;
 
 namespace OmniCore.API.Controllers
@@ -24,14 +25,16 @@ namespace OmniCore.API.Controllers
                 .Select(c => c.Value)
                 .ToList();
 
-            return Ok(new
+            var result = new
             {
                 userId,
                 email,
                 fullName,
                 role,
                 permissions
-            });
+            };
+
+            return Ok(new ApiResponse<object>(result));
         }
 
         [Authorize(Roles = "Admin")]
@@ -54,11 +57,13 @@ namespace OmniCore.API.Controllers
                 return Forbid();
             }
 
-            return Ok(new
+            var result = new
             {
                 message = "Permission granted",
                 permissionChecked = permission
-            });
+            };
+
+            return Ok(new ApiResponse<object>(result));
         }
     }
 }

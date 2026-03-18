@@ -1,8 +1,10 @@
 ﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using OmniCore.Application.DTOs.Common;
 using OmniCore.Application.DTOs.Order;
 using OmniCore.Application.DTOs.Orders;
 using OmniCore.Application.Interfaces;
@@ -28,7 +30,9 @@ namespace OmniCore.API.Controllers
         [EnableRateLimiting("orderPolicy")]
         public async Task<IActionResult> Create(CreateOrderRequest request)
         {
-            return Ok(await _service.CreateOrderAsync(request));
+            //return Ok(await _service.CreateOrderAsync(request));
+            var createOrder = await _service.CreateOrderAsync(request);
+            return Ok(new ApiResponse<object>(createOrder, "Order created successfully"));
         }
 
         // V1 - Basic
@@ -43,7 +47,8 @@ namespace OmniCore.API.Controllers
             var order = await _service.GetByIdAsync(id);
             if (order == null) return NotFound();
 
-            return Ok(order);
+            //return Ok(order);
+            return Ok(new ApiResponse<object>(order));
         }
 
         // V2 - Enhanced Response
@@ -68,7 +73,7 @@ namespace OmniCore.API.Controllers
                 TotalItems = order.Items?.Count ?? 0
             };
 
-            return Ok(result);
+            return Ok(new ApiResponse<object>(order));
         }
 
         /*
@@ -95,7 +100,8 @@ namespace OmniCore.API.Controllers
             Response.Headers["Cache-Control"] = "public,max-age=60";
 
             var orders = await _service.GetAllByCustomerAsync(customerId);
-            return Ok(orders);
+
+            return Ok(new ApiResponse<IEnumerable<object>>(orders));
         }
 
         // Moderate (important action)
@@ -104,7 +110,7 @@ namespace OmniCore.API.Controllers
         public async Task<IActionResult> Cancel(Guid id)
         {
             await _service.CancelOrderAsync(id);
-            return NoContent();
+            return Ok(new ApiResponse<object>(null,"Order cancelled successfully"));
         }
     }
 }
