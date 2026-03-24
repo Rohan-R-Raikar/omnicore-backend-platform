@@ -10,7 +10,10 @@
   <ItemGroup>
     <PackageReference Include="coverlet.collector" Version="6.0.2" />
     <PackageReference Include="FluentAssertions" Version="8.9.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.25" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.25" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.25" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="10.0.5" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.12.0" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="xunit" Version="2.9.2" />
@@ -22,6 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\OmniCore.API\OmniCore.API.csproj" />
     <ProjectReference Include="..\..\src\OmniCore.Application\OmniCore.Application.csproj" />
     <ProjectReference Include="..\..\src\OmniCore.Domain\OmniCore.Domain.csproj" />
     <ProjectReference Include="..\..\src\OmniCore.Infrastructure\OmniCore.Infrastructure.csproj" />

@@ -32,7 +32,11 @@ builder.Services.AddApiVersioningConfig();
 builder.Services.AddSwaggerConfig();
 builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddRateLimiterConfig();
-builder.Services.AddHangfireConfig(builder.Configuration);
+
+if (!builder.Environment.IsEnvironment("Testing"))
+{
+    builder.Services.AddHangfireConfig(builder.Configuration);
+}
 
 builder.Services.AddHealthChecks();
 
@@ -65,15 +69,20 @@ app.UseResponseCaching();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseHangfireDashboard("/hangfire");
+if (!app.Environment.IsEnvironment("Testing"))
+{
+    app.UseHangfireDashboard();
 
-RecurringJob.AddOrUpdate<OrderCleanupJob>(
-    "cancel-expired-orders",
-    job => job.CancelExpiredOrders(),
-    "*/1 * * * *"
-);
+    RecurringJob.AddOrUpdate<OrderCleanupJob>(
+        "cancel-expired-orders",
+        job => job.CancelExpiredOrders(),
+        "*/1 * * * *"
+    );
+}
 
 app.MapHealthChecks("/health");
 
 app.MapControllers();
 app.Run();
+
+public partial class Program { }
