@@ -124,6 +124,7 @@ namespace OmniCore.Tests.Services
                 .WithMessage("*not found*");
         }
 
+
         [Fact]
         public async Task CreateOrderAsync_Should_Throw_When_Stock_Is_Insufficient()
         {
@@ -172,6 +173,7 @@ namespace OmniCore.Tests.Services
             await act.Should().ThrowAsync<Exception>()
                 .WithMessage("*Insufficient stock*");
         }
+        
 
         [Fact]
         public async Task GetByIdAsync_Should_Return_From_Cache_On_Second_Call()
@@ -225,6 +227,61 @@ namespace OmniCore.Tests.Services
 
             // Bonus: same reference means it came from cache
             secondResult.Should().BeSameAs(firstResult);
+        }
+
+
+        [Fact]
+        public async Task CancelOrderAsync_Should_Cancel_Order_And_Restore_Stock()
+        {
+            // Arrange
+            var context = GetDbContext();
+
+            var orderId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var productId = Guid.NewGuid();
+
+            var product = new Product
+            {
+                Id = productId,
+                Name = "Test Product",
+                Price = 100,
+                Stock = 5,
+                IsActive = true
+            };
+
+            context.Products.Add(product);
+
+            var order = new Order
+            {
+                Id = orderId,
+                CustomerId = customerId,
+                Status = OmniCore.Domain.Enums.OrderStatus.Pending,
+                Items = new List<OrderItem>
+        {
+            new OrderItem
+            {
+                ProductId = productId,
+                Quantity = 2,
+                UnitPrice = 100
+            }
+        }
+            };
+
+            context.Orders.Add(order);
+
+            await context.SaveChangesAsync();
+
+            var service = GetService(context);
+
+            // Act
+            await service.CancelOrderAsync(orderId);
+
+            // Assert
+            var updatedOrder = await context.Orders.FirstAsync(o => o.Id == orderId);
+            updatedOrder.Status.Should().Be(OmniCore.Domain.Enums.OrderStatus.Cancelled);
+
+            var updatedProduct = await context.Products.FirstAsync(p => p.Id == productId);
+            updatedProduct.Stock.Should().Be(7); // 5 + 2 restored
         }
     }
 }
