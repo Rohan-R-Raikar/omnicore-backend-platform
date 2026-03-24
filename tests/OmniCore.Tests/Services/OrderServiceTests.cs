@@ -172,5 +172,59 @@ namespace OmniCore.Tests.Services
             await act.Should().ThrowAsync<Exception>()
                 .WithMessage("*Insufficient stock*");
         }
+
+        [Fact]
+        public async Task GetByIdAsync_Should_Return_From_Cache_On_Second_Call()
+        {
+            // Arrange
+            var context = GetDbContext();
+
+            var orderId = Guid.NewGuid();
+            var customerId = Guid.NewGuid();
+            var productId = Guid.NewGuid();
+
+            context.Products.Add(new Product
+            {
+                Id = productId,
+                Name = "Test Product",
+                Price = 100,
+                Stock = 10,
+                IsActive = true
+            });
+
+            context.Orders.Add(new Order
+            {
+                Id = orderId,
+                CustomerId = customerId,
+                TotalPrice = 100,
+                Status = OmniCore.Domain.Enums.OrderStatus.Pending,
+                Items = new List<OrderItem>
+        {
+            new OrderItem
+            {
+                ProductId = productId,
+                Quantity = 1,
+                UnitPrice = 100
+            }
+        }
+            });
+
+            await context.SaveChangesAsync();
+
+            var service = GetService(context);
+
+            // Act 1 → first call (DB hit)
+            var firstResult = await service.GetByIdAsync(orderId);
+
+            // Act 2 → second call (should be cached)
+            var secondResult = await service.GetByIdAsync(orderId);
+
+            // Assert
+            secondResult.Should().NotBeNull();
+            secondResult.Id.Should().Be(orderId);
+
+            // Bonus: same reference means it came from cache
+            secondResult.Should().BeSameAs(firstResult);
+        }
     }
 }
