@@ -73,7 +73,7 @@ namespace OmniCore.API.Controllers
                 TotalItems = order.Items?.Count ?? 0
             };
 
-            return Ok(new ApiResponse<object>(order));
+            return Ok(new ApiResponse<object>(result));
         }
 
         /*
