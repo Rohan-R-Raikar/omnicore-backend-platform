@@ -34,6 +34,8 @@ builder.Services.AddJwtAuthentication(builder.Configuration);
 builder.Services.AddRateLimiterConfig();
 builder.Services.AddHangfireConfig(builder.Configuration);
 
+builder.Services.AddHealthChecks();
+
 var app = builder.Build();
 
 app.UseSwagger();
@@ -70,6 +72,8 @@ RecurringJob.AddOrUpdate<OrderCleanupJob>(
     job => job.CancelExpiredOrders(),
     "*/1 * * * *"
 );
+
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 app.Run();
