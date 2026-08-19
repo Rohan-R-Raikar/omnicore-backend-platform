@@ -1,0 +1,6 @@
+@OmniCore.ProductService_HostAddress = http://localhost:5137
+
+GET {{OmniCore.ProductService_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
