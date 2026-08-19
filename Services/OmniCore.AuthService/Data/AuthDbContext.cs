@@ -11,4 +11,12 @@ public class AuthDbContext : DbContext
     }
 
     public DbSet<User> Users => Set<User>();
+
+    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    {
+        modelBuilder.ApplyConfigurationsFromAssembly(
+            typeof(AuthDbContext).Assembly);
+
+        base.OnModelCreating(modelBuilder);
+    }
 }
