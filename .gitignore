@@ -482,3 +482,29 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+
+# Build
+bin/
+obj/
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+
+# Local secrets
+scripts/set-local-env.ps1
+.env
+.env.*
+secrets.json
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db

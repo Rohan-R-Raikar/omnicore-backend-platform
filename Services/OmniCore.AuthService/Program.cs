@@ -104,7 +104,8 @@ using (var scope = app.Services.CreateScope())
 
     await AuthDbSeeder.SeedAsync(
         dbContext,
-        passwordHasher);
+        passwordHasher,
+        builder.Configuration);
 }
 
 if (app.Environment.IsDevelopment())

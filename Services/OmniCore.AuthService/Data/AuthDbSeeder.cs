@@ -2,8 +2,6 @@ using Microsoft.EntityFrameworkCore;
 using OmniCore.AuthService.Models.Entities;
 using OmniCore.AuthService.Models.Enums;
 using OmniCore.AuthService.Security;
-using System;
-using System.Threading.Tasks;
 
 namespace OmniCore.AuthService.Data;
 
@@ -11,9 +9,27 @@ public static class AuthDbSeeder
 {
     public static async Task SeedAsync(
         AuthDbContext context,
-        IPasswordHasher passwordHasher)
+        IPasswordHasher passwordHasher,
+        IConfiguration configuration)
     {
-        const string adminEmail = "admin@omnicore.com";
+        var adminName =
+            configuration["SeedAdmin:Name"]
+            ?? throw new InvalidOperationException(
+                "SeedAdmin:Name is not configured.");
+
+        var adminEmail =
+            configuration["SeedAdmin:Email"]
+            ?? throw new InvalidOperationException(
+                "SeedAdmin:Email is not configured.");
+
+        var adminPassword =
+            configuration["SeedAdmin:Password"]
+            ?? throw new InvalidOperationException(
+                "SeedAdmin:Password is not configured.");
+
+        adminEmail = adminEmail
+            .Trim()
+            .ToLowerInvariant();
 
         var adminExists = await context.Users
             .AnyAsync(user => user.Email == adminEmail);
@@ -26,9 +42,9 @@ public static class AuthDbSeeder
         var admin = new User
         {
             Id = Guid.NewGuid(),
-            Name = "OmniCore Admin",
+            Name = adminName.Trim(),
             Email = adminEmail,
-            PasswordHash = passwordHasher.Hash("Admin@123"),
+            PasswordHash = passwordHasher.Hash(adminPassword),
             Role = UserRole.Admin,
             CreatedAt = DateTime.UtcNow
         };

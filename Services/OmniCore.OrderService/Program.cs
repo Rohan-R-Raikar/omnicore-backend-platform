@@ -17,6 +17,8 @@ using OmniCore.OrderService.Messaging.Consumers;
 
 using OmniCore.OrderService.Middleware;
 
+using OmniCore.OrderService.Health;
+
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString =
@@ -152,7 +154,9 @@ builder.Services.AddTransient<CorrelationIdHandler>();
 builder.Services
     .AddHealthChecks()
     .AddDbContextCheck<OrderDbContext>(
-        name: "order-database");
+        name: "order-database")
+    .AddCheck<RabbitMqHealthCheck>(
+        name: "rabbitmq");
 
 var app = builder.Build();
 

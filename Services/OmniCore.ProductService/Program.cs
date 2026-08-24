@@ -103,13 +103,6 @@ builder.Services
     .AddCheck<RedisHealthCheck>(
         name: "redis");
 
-builder.Services
-    .AddHealthChecks()
-    .AddDbContextCheck<OrderDbContext>(
-        name: "order-database")
-    .AddCheck<RabbitMqHealthCheck>(
-        name: "rabbitmq");
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())

@@ -1,12 +1,9 @@
+using Microsoft.EntityFrameworkCore;
 using OmniCore.InventoryService.Models.DTOs;
 using OmniCore.InventoryService.Models.Entities;
+using OmniCore.InventoryService.Models.Exceptions;
 using OmniCore.InventoryService.Repositories.Interfaces;
 using OmniCore.InventoryService.Services.Interfaces;
-using System;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using OmniCore.InventoryService.Models.Exceptions;
 
 namespace OmniCore.InventoryService.Services.Implementations;
 
@@ -64,8 +61,12 @@ public class InventoryService : IInventoryService
         }
         else
         {
-            inventory.AvailableQuantity = request.AvailableQuantity;
-            inventory.ReservedQuantity = request.ReservedQuantity;
+            inventory.AvailableQuantity =
+                request.AvailableQuantity;
+
+            inventory.ReservedQuantity =
+                request.ReservedQuantity;
+
             inventory.UpdatedAt = DateTime.UtcNow;
         }
 
@@ -90,9 +91,9 @@ public class InventoryService : IInventoryService
     }
 
     public async Task<InventoryResponse?> ReserveAsync(
-    Guid productId,
-    int quantity,
-    CancellationToken cancellationToken = default)
+        Guid productId,
+        int quantity,
+        CancellationToken cancellationToken = default)
     {
         if (quantity <= 0)
         {
@@ -120,21 +121,31 @@ public class InventoryService : IInventoryService
         inventory.ReservedQuantity += quantity;
         inventory.UpdatedAt = DateTime.UtcNow;
 
-        await _inventoryRepository.SaveChangesAsync(
-            cancellationToken);
+        try
+        {
+            await _inventoryRepository.SaveChangesAsync(
+                cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new InventoryConcurrencyException();
+        }
 
         _logger.LogInformation(
-            "Reserved {Quantity} units for ProductId {ProductId}.",
+            "Reserved {Quantity} units for ProductId {ProductId}. " +
+            "Available: {AvailableQuantity}, Reserved: {ReservedQuantity}",
             quantity,
-            productId);
+            productId,
+            inventory.AvailableQuantity,
+            inventory.ReservedQuantity);
 
         return MapInventory(inventory);
     }
 
     public async Task<InventoryResponse?> ReleaseAsync(
-    Guid productId,
-    int quantity,
-    CancellationToken cancellationToken = default)
+        Guid productId,
+        int quantity,
+        CancellationToken cancellationToken = default)
     {
         if (quantity <= 0)
         {
@@ -162,13 +173,23 @@ public class InventoryService : IInventoryService
         inventory.AvailableQuantity += quantity;
         inventory.UpdatedAt = DateTime.UtcNow;
 
-        await _inventoryRepository.SaveChangesAsync(
-            cancellationToken);
+        try
+        {
+            await _inventoryRepository.SaveChangesAsync(
+                cancellationToken);
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            throw new InventoryConcurrencyException();
+        }
 
         _logger.LogInformation(
-            "Released {Quantity} reserved units for ProductId {ProductId}.",
+            "Released {Quantity} reserved units for ProductId {ProductId}. " +
+            "Available: {AvailableQuantity}, Reserved: {ReservedQuantity}",
             quantity,
-            productId);
+            productId,
+            inventory.AvailableQuantity,
+            inventory.ReservedQuantity);
 
         return MapInventory(inventory);
     }
