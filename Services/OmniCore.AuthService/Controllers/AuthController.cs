@@ -23,21 +23,11 @@ public class AuthController : ControllerBase
         RegisterRequest request,
         CancellationToken cancellationToken)
     {
-        try
-        {
-            var user = await _authService.RegisterAsync(
-                request,
-                cancellationToken);
+        var user = await _authService.RegisterAsync(
+            request,
+            cancellationToken);
 
-            return StatusCode(StatusCodes.Status201Created, user);
-        }
-        catch (InvalidOperationException exception)
-        {
-            return Conflict(new
-            {
-                message = exception.Message
-            });
-        }
+        return StatusCode(StatusCodes.Status201Created, user);
     }
 
     [HttpPost("login")]

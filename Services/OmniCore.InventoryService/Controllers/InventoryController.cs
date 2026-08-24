@@ -66,37 +66,20 @@ public class InventoryController : ControllerBase
     ReserveInventoryRequest request,
     CancellationToken cancellationToken)
     {
-        try
-        {
-            var inventory = await _inventoryService.ReserveAsync(
-                productId,
-                request.Quantity,
-                cancellationToken);
+        var inventory = await _inventoryService.ReserveAsync(
+            productId,
+            request.Quantity,
+            cancellationToken);
 
-            if (inventory is null)
-            {
-                return NotFound(new
-                {
-                    message = "Inventory not found for this product."
-                });
-            }
-
-            return Ok(inventory);
-        }
-        catch (InventoryConcurrencyException exception)
+        if (inventory is null)
         {
-            return Conflict(new
+            return NotFound(new
             {
-                message = exception.Message
+                message = "Inventory not found for this product."
             });
         }
-        catch (InvalidOperationException exception)
-        {
-            return Conflict(new
-            {
-                message = exception.Message
-            });
-        }
+
+        return Ok(inventory);
     }
 
     [HttpPost("{productId:guid}/release")]
@@ -106,36 +89,19 @@ public class InventoryController : ControllerBase
     ReserveInventoryRequest request,
     CancellationToken cancellationToken)
     {
-        try
-        {
-            var inventory = await _inventoryService.ReleaseAsync(
-                productId,
-                request.Quantity,
-                cancellationToken);
+        var inventory = await _inventoryService.ReleaseAsync(
+            productId,
+            request.Quantity,
+            cancellationToken);
 
-            if (inventory is null)
-            {
-                return NotFound(new
-                {
-                    message = "Inventory not found for this product."
-                });
-            }
-
-            return Ok(inventory);
-        }
-        catch (InventoryConcurrencyException exception)
+        if (inventory is null)
         {
-            return Conflict(new
+            return NotFound(new
             {
-                message = exception.Message
+                message = "Inventory not found for this product."
             });
         }
-        catch (InvalidOperationException exception)
-        {
-            return Conflict(new
-            {
-                message = exception.Message
-            });
-        }
+
+        return Ok(inventory);
     }
 }

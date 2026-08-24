@@ -8,6 +8,7 @@ using OmniCore.InventoryService.Repositories.Implementations;
 using OmniCore.InventoryService.Repositories.Interfaces;
 using OmniCore.InventoryService.Services.Implementations;
 using OmniCore.InventoryService.Services.Interfaces;
+using OmniCore.InventoryService.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -88,6 +89,11 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+builder.Services
+    .AddHealthChecks()
+    .AddDbContextCheck<InventoryDbContext>(
+        name: "inventory-database");
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -96,10 +102,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 

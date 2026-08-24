@@ -1,0 +1,90 @@
+using OmniCore.OrderService.Models.DTOs;
+using System;
+using System.Text.Json;
+using System.Threading.Tasks;
+
+namespace OmniCore.OrderService.Middleware;
+
+public class ExceptionHandlingMiddleware
+{
+    private readonly RequestDelegate _next;
+    private readonly ILogger<ExceptionHandlingMiddleware> _logger;
+
+    public ExceptionHandlingMiddleware(
+        RequestDelegate next,
+        ILogger<ExceptionHandlingMiddleware> logger)
+    {
+        _next = next;
+        _logger = logger;
+    }
+
+    public async Task InvokeAsync(HttpContext context)
+    {
+        try
+        {
+            await _next(context);
+        }
+        catch (UnauthorizedAccessException exception)
+        {
+            await WriteErrorAsync(
+                context,
+                StatusCodes.Status401Unauthorized,
+                exception.Message);
+        }
+        catch (InvalidOperationException exception)
+        {
+            await WriteErrorAsync(
+                context,
+                StatusCodes.Status409Conflict,
+                exception.Message);
+        }
+        catch (HttpRequestException exception)
+        {
+            _logger.LogError(
+                exception,
+                "Dependent service failure. TraceId: {TraceId}",
+                context.TraceIdentifier);
+
+            await WriteErrorAsync(
+                context,
+                StatusCodes.Status502BadGateway,
+                "A dependent service failed while processing the request.");
+        }
+        catch (Exception exception)
+        {
+            _logger.LogError(
+                exception,
+                "Unhandled exception. TraceId: {TraceId}",
+                context.TraceIdentifier);
+
+            await WriteErrorAsync(
+                context,
+                StatusCodes.Status500InternalServerError,
+                "An unexpected error occurred.");
+        }
+    }
+
+    private static async Task WriteErrorAsync(
+        HttpContext context,
+        int statusCode,
+        string message)
+    {
+        context.Response.StatusCode = statusCode;
+        context.Response.ContentType = "application/json";
+
+        var response = new ApiErrorResponse
+        {
+            Status = statusCode,
+            Message = message,
+            TraceId =
+            context.Items.TryGetValue(
+                CorrelationIdMiddleware.HeaderName,
+                out var correlationId)
+                ? correlationId?.ToString() ?? context.TraceIdentifier
+                : context.TraceIdentifier
+        };
+
+        await context.Response.WriteAsync(
+            JsonSerializer.Serialize(response));
+    }
+}

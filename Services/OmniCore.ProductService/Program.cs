@@ -10,6 +10,8 @@ using OmniCore.ProductService.Repositories.Implementations;
 using OmniCore.ProductService.Repositories.Interfaces;
 using OmniCore.ProductService.Services.Implementations;
 using OmniCore.ProductService.Services.Interfaces;
+using OmniCore.ProductService.Middleware;
+using OmniCore.ProductService.Health;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -94,6 +96,20 @@ builder.Services.AddSingleton<IConnectionMultiplexer>(
 
 builder.Services.AddSingleton<ICacheService, RedisCacheService>();
 
+builder.Services
+    .AddHealthChecks()
+    .AddDbContextCheck<ProductDbContext>(
+        name: "product-database")
+    .AddCheck<RedisHealthCheck>(
+        name: "redis");
+
+builder.Services
+    .AddHealthChecks()
+    .AddDbContextCheck<OrderDbContext>(
+        name: "order-database")
+    .AddCheck<RabbitMqHealthCheck>(
+        name: "rabbitmq");
+
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
@@ -102,10 +118,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 

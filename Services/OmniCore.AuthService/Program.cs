@@ -1,4 +1,5 @@
 using System.Text;
+using OmniCore.AuthService.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -86,6 +87,11 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
+builder.Services
+    .AddHealthChecks()
+    .AddDbContextCheck<AuthDbContext>(
+        name: "auth-database");
+
 var app = builder.Build();
 
 using (var scope = app.Services.CreateScope())
@@ -107,10 +113,16 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+app.UseMiddleware<CorrelationIdMiddleware>();
+
+app.UseMiddleware<ExceptionHandlingMiddleware>();
+
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.MapHealthChecks("/health");
 
 app.MapControllers();
 

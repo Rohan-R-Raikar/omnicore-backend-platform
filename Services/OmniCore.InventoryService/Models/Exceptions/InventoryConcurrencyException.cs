@@ -1,3 +1,5 @@
+using System;
+
 namespace OmniCore.InventoryService.Models.Exceptions;
 
 public class InventoryConcurrencyException : Exception
