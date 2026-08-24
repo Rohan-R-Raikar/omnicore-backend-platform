@@ -1,0 +1,180 @@
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: omnicore-sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "${OMNICORE_SQL_PASSWORD}"
+    ports:
+      - "1433:1433"
+    volumes:
+      - omnicore-sql-data:/var/opt/mssql
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "/opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P \"$${MSSQL_SA_PASSWORD}\" -C -Q \"SELECT 1\" || exit 1"
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
+    networks:
+      - omnicore-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: omnicore-redis
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    networks:
+      - omnicore-network
+
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: omnicore-rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: "${OMNICORE_RABBITMQ_USER}"
+      RABBITMQ_DEFAULT_PASS: "${OMNICORE_RABBITMQ_PASSWORD}"
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - omnicore-network
+
+  authservice:
+    build:
+      context: .
+      dockerfile: Services/OmniCore.AuthService/Dockerfile
+    image: omnicore-auth:local
+    container_name: omnicore-auth
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+
+      ConnectionStrings__AuthDatabase: "Server=sqlserver,1433;Database=OmniCoreAuthDb;User Id=sa;Password=${OMNICORE_SQL_PASSWORD};TrustServerCertificate=True;Encrypt=False"
+
+      Jwt__Key: "${OMNICORE_JWT_KEY}"
+      Jwt__Issuer: "OmniCore.AuthService"
+      Jwt__Audience: "OmniCore.Services"
+      Jwt__ExpiryMinutes: "60"
+
+      SeedAdmin__Name: "OmniCore Admin"
+      SeedAdmin__Email: "${OMNICORE_ADMIN_EMAIL}"
+      SeedAdmin__Password: "${OMNICORE_ADMIN_PASSWORD}"
+    ports:
+      - "5033:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - omnicore-network
+
+  productservice:
+    build:
+      context: .
+      dockerfile: Services/OmniCore.ProductService/Dockerfile
+    image: omnicore-product:local
+    container_name: omnicore-product
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+
+      ConnectionStrings__ProductDatabase: "Server=sqlserver,1433;Database=OmniCoreProductDb;User Id=sa;Password=${OMNICORE_SQL_PASSWORD};TrustServerCertificate=True;Encrypt=False"
+
+      Jwt__Key: "${OMNICORE_JWT_KEY}"
+      Jwt__Issuer: "OmniCore.AuthService"
+      Jwt__Audience: "OmniCore.Services"
+
+      Redis__ConnectionString: "redis:6379"
+      Redis__DefaultTtlMinutes: "5"
+    ports:
+      - "5137:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - omnicore-network
+
+  inventoryservice:
+    build:
+      context: .
+      dockerfile: Services/OmniCore.InventoryService/Dockerfile
+    image: omnicore-inventory:local
+    container_name: omnicore-inventory
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+
+      ConnectionStrings__InventoryDatabase: "Server=sqlserver,1433;Database=OmniCoreInventoryDb;User Id=sa;Password=${OMNICORE_SQL_PASSWORD};TrustServerCertificate=True;Encrypt=False"
+
+      Jwt__Key: "${OMNICORE_JWT_KEY}"
+      Jwt__Issuer: "OmniCore.AuthService"
+      Jwt__Audience: "OmniCore.Services"
+    ports:
+      - "5151:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - omnicore-network
+
+  orderservice:
+    build:
+      context: .
+      dockerfile: Services/OmniCore.OrderService/Dockerfile
+    image: omnicore-order:local
+    container_name: omnicore-order
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+
+      ConnectionStrings__OrderDatabase: "Server=sqlserver,1433;Database=OmniCoreOrderDb;User Id=sa;Password=${OMNICORE_SQL_PASSWORD};TrustServerCertificate=True;Encrypt=False"
+
+      Jwt__Key: "${OMNICORE_JWT_KEY}"
+      Jwt__Issuer: "OmniCore.AuthService"
+      Jwt__Audience: "OmniCore.Services"
+
+      Services__ProductService: "http://productservice:8080/"
+      Services__InventoryService: "http://inventoryservice:8080/"
+      Services__AuthService: "http://authservice:8080/"
+
+      RabbitMq__HostName: "rabbitmq"
+      RabbitMq__Port: "5672"
+      RabbitMq__UserName: "${OMNICORE_RABBITMQ_USER}"
+      RabbitMq__Password: "${OMNICORE_RABBITMQ_PASSWORD}"
+      RabbitMq__QueueName: "omnicore.order.created"
+    ports:
+      - "5027:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      productservice:
+        condition: service_started
+      inventoryservice:
+        condition: service_started
+      authservice:
+        condition: service_started
+    networks:
+      - omnicore-network
+
+networks:
+  omnicore-network:
+    driver: bridge
+
+volumes:
+  omnicore-sql-data:

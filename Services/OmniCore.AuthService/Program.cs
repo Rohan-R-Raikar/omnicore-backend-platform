@@ -94,6 +94,7 @@ builder.Services
 
 var app = builder.Build();
 
+
 using (var scope = app.Services.CreateScope())
 {
     var dbContext = scope.ServiceProvider
@@ -101,6 +102,8 @@ using (var scope = app.Services.CreateScope())
 
     var passwordHasher = scope.ServiceProvider
         .GetRequiredService<IPasswordHasher>();
+
+    await dbContext.Database.MigrateAsync();
 
     await AuthDbSeeder.SeedAsync(
         dbContext,
