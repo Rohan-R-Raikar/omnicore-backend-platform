@@ -1,0 +1,14 @@
+**/bin
+**/obj
+.vs
+.vscode
+.idea
+.git
+.gitignore
+scripts/set-local-env.ps1
+.env
+.env.*
+*.user
+*.suo
+*.log
+logs
