@@ -1,0 +1,93 @@
+name: Publish OmniCore Docker Images
+
+on:
+  workflow_dispatch:
+
+  push:
+    tags:
+      - "v*.*.*"
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    name: Publish Docker Images
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v4
+        with:
+          username: ${{ vars.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      # =============================
+      # AuthService
+      # =============================
+
+      - name: Build and push AuthService
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Services/OmniCore.AuthService/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.DOCKERHUB_USERNAME }}/omnicore-auth:latest
+            ${{ vars.DOCKERHUB_USERNAME }}/omnicore-auth:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # =============================
+      # ProductService
+      # =============================
+
+      - name: Build and push ProductService
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Services/OmniCore.ProductService/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.DOCKERHUB_USERNAME }}/omnicore-product:latest
+            ${{ vars.DOCKERHUB_USERNAME }}/omnicore-product:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # =============================
+      # InventoryService
+      # =============================
+
+      - name: Build and push InventoryService
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Services/OmniCore.InventoryService/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.DOCKERHUB_USERNAME }}/omnicore-inventory:latest
+            ${{ vars.DOCKERHUB_USERNAME }}/omnicore-inventory:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      # =============================
+      # OrderService
+      # =============================
+
+      - name: Build and push OrderService
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: Services/OmniCore.OrderService/Dockerfile
+          push: true
+          tags: |
+            ${{ vars.DOCKERHUB_USERNAME }}/omnicore-order:latest
+            ${{ vars.DOCKERHUB_USERNAME }}/omnicore-order:${{ github.ref_name }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
