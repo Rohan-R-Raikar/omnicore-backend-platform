@@ -1,0 +1,226 @@
+name: OmniCore Build and Test
+
+on:
+  push:
+    branches:
+      - main
+      - master
+
+  pull_request:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_VERSION: "8.0.x"
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+
+    env:
+      OMNICORE_SQL_PASSWORD: ${{ secrets.OMNICORE_SQL_PASSWORD }}
+      OMNICORE_JWT_KEY: ${{ secrets.OMNICORE_JWT_KEY }}
+
+      OMNICORE_RABBITMQ_USER: ${{ secrets.OMNICORE_RABBITMQ_USER }}
+      OMNICORE_RABBITMQ_PASSWORD: ${{ secrets.OMNICORE_RABBITMQ_PASSWORD }}
+
+      OMNICORE_ADMIN_EMAIL: ${{ secrets.OMNICORE_ADMIN_EMAIL }}
+      OMNICORE_ADMIN_PASSWORD: ${{ secrets.OMNICORE_ADMIN_PASSWORD }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+
+      - name: Display .NET information
+        run: dotnet --info
+
+      - name: Restore dependencies
+        run: dotnet restore OmniCore.sln
+
+      - name: Build solution
+        run: >
+          dotnet build OmniCore.sln
+          --configuration Release
+          --no-restore
+
+      - name: Run AuthService unit tests
+        run: >
+          dotnet test
+          Tests/OmniCore.AuthService.Tests/OmniCore.AuthService.Tests.csproj
+          --configuration Release
+          --no-build
+          --verbosity normal
+
+      - name: Run ProductService unit tests
+        run: >
+          dotnet test
+          Tests/OmniCore.ProductService.Tests/OmniCore.ProductService.Tests.csproj
+          --configuration Release
+          --no-build
+          --verbosity normal
+
+      - name: Run InventoryService unit tests
+        run: >
+          dotnet test
+          Tests/OmniCore.InventoryService.Tests/OmniCore.InventoryService.Tests.csproj
+          --configuration Release
+          --no-build
+          --verbosity normal
+
+      - name: Run OrderService unit tests
+        run: >
+          dotnet test
+          Tests/OmniCore.OrderService.Tests/OmniCore.OrderService.Tests.csproj
+          --configuration Release
+          --no-build
+          --verbosity normal
+
+      - name: Validate required CI secrets
+        shell: bash
+        run: |
+          set -e
+
+          required_variables=(
+            OMNICORE_SQL_PASSWORD
+            OMNICORE_JWT_KEY
+            OMNICORE_RABBITMQ_USER
+            OMNICORE_RABBITMQ_PASSWORD
+            OMNICORE_ADMIN_EMAIL
+            OMNICORE_ADMIN_PASSWORD
+          )
+
+          for variable_name in "${required_variables[@]}"; do
+            if [ -z "${!variable_name}" ]; then
+              echo "::error::$variable_name is not configured."
+              exit 1
+            fi
+          done
+
+          echo "All required CI variables are configured."
+
+      - name: Start OmniCore Docker stack
+        run: docker compose up --build -d
+
+      - name: Show Docker containers
+        run: docker compose ps -a
+
+      - name: Wait for AuthService
+        shell: bash
+        run: |
+          set -e
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:5033/health > /dev/null; then
+              echo "AuthService is healthy."
+              exit 0
+            fi
+
+            echo "Waiting for AuthService... attempt $attempt/30"
+            sleep 5
+          done
+
+          echo "::error::AuthService did not become healthy."
+          exit 1
+
+      - name: Wait for ProductService
+        shell: bash
+        run: |
+          set -e
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:5137/health > /dev/null; then
+              echo "ProductService is healthy."
+              exit 0
+            fi
+
+            echo "Waiting for ProductService... attempt $attempt/30"
+            sleep 5
+          done
+
+          echo "::error::ProductService did not become healthy."
+          exit 1
+
+      - name: Wait for InventoryService
+        shell: bash
+        run: |
+          set -e
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:5151/health > /dev/null; then
+              echo "InventoryService is healthy."
+              exit 0
+            fi
+
+            echo "Waiting for InventoryService... attempt $attempt/30"
+            sleep 5
+          done
+
+          echo "::error::InventoryService did not become healthy."
+          exit 1
+
+      - name: Wait for OrderService
+        shell: bash
+        run: |
+          set -e
+
+          for attempt in {1..30}; do
+            if curl --fail --silent http://localhost:5027/health > /dev/null; then
+              echo "OrderService is healthy."
+              exit 0
+            fi
+
+            echo "Waiting for OrderService... attempt $attempt/30"
+            sleep 5
+          done
+
+          echo "::error::OrderService did not become healthy."
+          exit 1
+
+      - name: Show healthy Docker stack
+        run: docker compose ps
+
+      - name: Run integration tests
+        run: >
+          dotnet test
+          Tests/OmniCore.IntegrationTests/OmniCore.IntegrationTests.csproj
+          --configuration Release
+          --no-build
+          --verbosity normal
+
+      - name: Show Docker logs on failure
+        if: failure()
+        run: |
+          echo "================ AUTH SERVICE ================"
+          docker compose logs authservice --tail=200 || true
+
+          echo "================ PRODUCT SERVICE ================"
+          docker compose logs productservice --tail=200 || true
+
+          echo "================ INVENTORY SERVICE ================"
+          docker compose logs inventoryservice --tail=200 || true
+
+          echo "================ ORDER SERVICE ================"
+          docker compose logs orderservice --tail=300 || true
+
+          echo "================ SQL SERVER ================"
+          docker compose logs sqlserver --tail=100 || true
+
+          echo "================ REDIS ================"
+          docker compose logs redis --tail=100 || true
+
+          echo "================ RABBITMQ ================"
+          docker compose logs rabbitmq --tail=150 || true
+
+      - name: Stop Docker stack
+        if: always()
+        run: docker compose down -v --remove-orphans

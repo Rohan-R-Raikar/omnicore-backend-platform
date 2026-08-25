@@ -2,22 +2,20 @@ using System.Text;
 
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Http.Resilience;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
 using OmniCore.OrderService.Data;
+using OmniCore.OrderService.Health;
+using OmniCore.OrderService.Messaging.Consumers;
+using OmniCore.OrderService.Messaging.Producers;
+using OmniCore.OrderService.Middleware;
 using OmniCore.OrderService.Repositories.Implementations;
 using OmniCore.OrderService.Repositories.Interfaces;
 using OmniCore.OrderService.Services.Clients;
 using OmniCore.OrderService.Services.Implementations;
 using OmniCore.OrderService.Services.Interfaces;
-
-using OmniCore.OrderService.Messaging.Producers;
-using OmniCore.OrderService.Messaging.Consumers;
-
-using OmniCore.OrderService.Middleware;
-
-using OmniCore.OrderService.Health;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -52,6 +50,7 @@ var jwtAudience =
         "JWT audience is not configured.");
 
 builder.Services.AddControllers();
+
 builder.Services.AddEndpointsApiExplorer();
 
 builder.Services.AddSwaggerGen(options =>
@@ -85,45 +84,128 @@ builder.Services.AddSwaggerGen(options =>
         });
 });
 
-builder.Services.AddScoped<
-    IOrderEventPublisher,
-    RabbitMqOrderEventPublisher>();
-
-builder.Services.AddHostedService<OrderCreatedConsumer>();
-
 builder.Services.AddDbContext<OrderDbContext>(options =>
 {
     options.UseSqlServer(connectionString);
 });
 
-builder.Services.AddScoped<IOrderRepository, OrderRepository>();
+builder.Services.AddScoped<
+    IOrderRepository,
+    OrderRepository>();
 
-builder.Services.AddScoped<IOrderService, OrderService>();
+builder.Services.AddScoped<
+    IOrderService,
+    OrderService>();
 
+builder.Services.AddScoped<
+    IOrderEventPublisher,
+    RabbitMqOrderEventPublisher>();
+
+builder.Services.AddHostedService<
+    OrderCreatedConsumer>();
+
+builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddTransient<
+    CorrelationIdHandler>();
+
+//
+// PRODUCT SERVICE HTTP CLIENT
+//
+// ProductService is called using GET requests.
+// GET requests are safe to retry.
+//
 builder.Services
     .AddHttpClient<
         IProductServiceClient,
         ProductServiceClient>(
         client =>
         {
-            client.BaseAddress = new Uri(productServiceUrl);
-            client.Timeout = TimeSpan.FromSeconds(10);
+            client.BaseAddress =
+                new Uri(productServiceUrl);
         })
-    .AddHttpMessageHandler<CorrelationIdHandler>();
+    .AddHttpMessageHandler<
+        CorrelationIdHandler>()
+    .AddStandardResilienceHandler(options =>
+    {
+        // Retry transient ProductService failures.
+        options.Retry.MaxRetryAttempts = 3;
 
+        options.Retry.Delay =
+            TimeSpan.FromMilliseconds(500);
+
+        options.Retry.UseJitter = true;
+
+        // Maximum time allowed for one HTTP attempt.
+        options.AttemptTimeout.Timeout =
+            TimeSpan.FromSeconds(3);
+
+        // Maximum total time for the complete request,
+        // including retries.
+        options.TotalRequestTimeout.Timeout =
+            TimeSpan.FromSeconds(10);
+
+        // Circuit breaker configuration.
+        options.CircuitBreaker.FailureRatio = 0.5;
+
+        options.CircuitBreaker.MinimumThroughput = 5;
+
+        options.CircuitBreaker.SamplingDuration =
+            TimeSpan.FromSeconds(20);
+
+        options.CircuitBreaker.BreakDuration =
+            TimeSpan.FromSeconds(15);
+    });
+
+//
+// INVENTORY SERVICE HTTP CLIENT
+//
+// Reserve and Release use POST requests.
+//
+// We DO NOT automatically retry POST requests because
+// the InventoryService operation could already have succeeded
+// even if OrderService failed to receive the response.
+//
 builder.Services
     .AddHttpClient<
         IInventoryServiceClient,
         InventoryServiceClient>(
         client =>
         {
-            client.BaseAddress = new Uri(inventoryServiceUrl);
-            client.Timeout = TimeSpan.FromSeconds(10);
+            client.BaseAddress =
+                new Uri(inventoryServiceUrl);
         })
-    .AddHttpMessageHandler<CorrelationIdHandler>();
+    .AddHttpMessageHandler<
+        CorrelationIdHandler>()
+    .AddStandardResilienceHandler(options =>
+    {
+        // Disable automatic retries for POST/PUT/PATCH/DELETE.
+        options.Retry.ShouldHandle =
+            static _ => ValueTask.FromResult(false);
+
+        // Give Inventory slightly more time because
+        // reservation writes to SQL Server.
+        options.AttemptTimeout.Timeout =
+            TimeSpan.FromSeconds(5);
+
+        options.TotalRequestTimeout.Timeout =
+            TimeSpan.FromSeconds(8);
+
+        // Circuit breaker configuration.
+        options.CircuitBreaker.FailureRatio = 0.5;
+
+        options.CircuitBreaker.MinimumThroughput = 5;
+
+        options.CircuitBreaker.SamplingDuration =
+            TimeSpan.FromSeconds(20);
+
+        options.CircuitBreaker.BreakDuration =
+            TimeSpan.FromSeconds(15);
+    });
 
 builder.Services
-    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddAuthentication(
+        JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
         options.TokenValidationParameters =
@@ -147,10 +229,6 @@ builder.Services
 
 builder.Services.AddAuthorization();
 
-builder.Services.AddHttpContextAccessor();
-
-builder.Services.AddTransient<CorrelationIdHandler>();
-
 builder.Services
     .AddHealthChecks()
     .AddDbContextCheck<OrderDbContext>(
@@ -160,10 +238,14 @@ builder.Services
 
 var app = builder.Build();
 
+//
+// APPLY ORDER DATABASE MIGRATIONS
+//
 using (var scope = app.Services.CreateScope())
 {
-    var dbContext = scope.ServiceProvider
-        .GetRequiredService<OrderDbContext>();
+    var dbContext =
+        scope.ServiceProvider
+            .GetRequiredService<OrderDbContext>();
 
     await dbContext.Database.MigrateAsync();
 }
@@ -174,12 +256,18 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
+//
+// CORRELATION ID MUST RUN BEFORE
+// EXCEPTION HANDLING SO FAILURES CAN BE TRACED.
+//
 app.UseMiddleware<CorrelationIdMiddleware>();
+
 app.UseMiddleware<ExceptionHandlingMiddleware>();
 
 app.UseHttpsRedirection();
 
 app.UseAuthentication();
+
 app.UseAuthorization();
 
 app.MapHealthChecks("/health");
